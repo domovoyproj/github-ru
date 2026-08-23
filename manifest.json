@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "RuHub - Русский GitHub + Утилиты",
-  "version": "1.0",
-  "description": "Русификатор интерфейса GitHub с полезными кнопками для разработчиков.",
+  "name": "RuHub — Русский GitHub + Quick Tools",
+  "version": "1.0.1",
+  "description": "Русификатор интерфейса GitHub с быстрыми кнопками веб-редактора VS Code и скачивания ZIP-архивов.",
+  "author": "domovoyproj",
   "permissions": ["storage"],
   "content_scripts": [
     {
@@ -13,6 +14,6 @@
     }
   ],
   "action": {
-    "default_title": "Настройки RuHub"
+    "default_title": "RuHub — Настройки"
   }
 }

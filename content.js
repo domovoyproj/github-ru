@@ -1,55 +1,75 @@
 const DICTIONARY = {
-  "Pull requests": "Пул-реквесты",
-  "Issues": "Задачи",
-  "Code": "Код",
-  "Actions": "Действия",
-  "Projects": "Проекты",
-  "Wiki": "Вики",
-  "Security": "Безопасность",
-  "Insights": "Аналитика",
-  "Settings": "Настройки",
-  "Fork": "Форк",
-  "Star": "Оценить",
-  "Watch": "Следить",
-  "Commits": "Коммиты",
-  "Branches": "Ветки",
-  "Releases": "Релизы",
-  "Contributors": "Участники",
-  "Repositories": "Репозитории",
-  "Overview": "Обзор",
-  "Packages": "Пакеты",
-  "Stars": "Звезды",
-  "Sponsoring": "Спонсорство",
-  "Followers": "Подписчики",
-  "Following": "Подписки",
-  "Sign in": "Войти",
-  "Sign up": "Регистрация",
-  "Sign out": "Выйти",
-  "New": "Создать",
-  "Edit": "Редактировать",
-  "Delete": "Удалить",
-  "Cancel": "Отмена",
-  "Save": "Сохранить",
-  "About": "О проекте",
-  "Readme": "Ридми"
+  "pull requests": "Пул-реквесты",
+  "issues": "Задачи",
+  "code": "Код",
+  "actions": "Действия",
+  "projects": "Проекты",
+  "wiki": "Вики",
+  "security": "Безопасность",
+  "insights": "Аналитика",
+  "settings": "Настройки",
+  "fork": "Форк",
+  "star": "Оценить",
+  "watch": "Следить",
+  "unwatch": "Не следить",
+  "commits": "коммиты",
+  "branches": "ветки",
+  "releases": "релизы",
+  "contributors": "участники",
+  "repositories": "Репозитории",
+  "overview": "Обзор",
+  "packages": "Пакеты",
+  "stars": "Звезды",
+  "sponsoring": "Спонсорство",
+  "followers": "Подписчики",
+  "following": "Подписки",
+  "sign in": "Войти",
+  "sign up": "Регистрация",
+  "sign out": "Выйти",
+  "new": "Создать",
+  "edit": "Редактировать",
+  "delete": "Удалить",
+  "cancel": "Отмена",
+  "save": "Сохранить",
+  "about": "О проекте",
+  "readme": "Ридми"
 };
 
 // --- Переводчик ---
 
-// Эффективный обход текстовых узлов без разрушения иконок (SVG)
-function translateTextNode(node) {
-  if (node.nodeType === Node.TEXT_NODE) {
-    const text = node.nodeValue.trim();
-    if (DICTIONARY[text]) {
-      node.nodeValue = node.nodeValue.replace(text, DICTIONARY[text]);
+// Используем TreeWalker — это самый быстрый и надежный способ обхода текстовых узлов в браузере
+function translateDOM() {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+  
+  while ((node = walker.nextNode())) {
+    const parent = node.parentElement;
+    // Пропускаем скрипты, стили и поля ввода
+    if (parent && (parent.tagName === 'SCRIPT' || parent.tagName === 'STYLE' || parent.tagName === 'TEXTAREA' || parent.isContentEditable)) {
+      continue;
     }
-  } else {
-    for (const child of node.childNodes) {
-      if (child.nodeName !== 'SCRIPT' && child.nodeName !== 'STYLE') {
-        translateTextNode(child);
-      }
+    
+    const originalText = node.nodeValue;
+    const trimmedText = originalText.trim().toLowerCase(); // Ищем без учета регистра
+    
+    if (DICTIONARY[trimmedText]) {
+      // Сохраняем пробелы по краям, заменяя только сам текст
+      node.nodeValue = originalText.replace(originalText.trim(), DICTIONARY[trimmedText]);
     }
   }
+  
+  // Переводим важные атрибуты (подсказки и плейсхолдеры)
+  const elementsWithAttributes = document.querySelectorAll('[aria-label], [placeholder], [title], [data-content]');
+  elementsWithAttributes.forEach(el => {
+    ['aria-label', 'placeholder', 'title', 'data-content'].forEach(attr => {
+      if (el.hasAttribute(attr)) {
+        const val = el.getAttribute(attr).trim().toLowerCase();
+        if (DICTIONARY[val]) {
+          el.setAttribute(attr, DICTIONARY[val]);
+        }
+      }
+    });
+  });
 }
 
 // Защита от спама мутациями (throttling)
@@ -57,10 +77,10 @@ let translationTimeout = null;
 function requestTranslation() {
   if (translationTimeout) return;
   translationTimeout = setTimeout(() => {
-    translateTextNode(document.body);
+    translateDOM();
     injectCustomButtons();
     translationTimeout = null;
-  }, 300);
+  }, 100); // Уменьшил задержку для большей отзывчивости
 }
 
 // --- Полезные кнопки ---
@@ -72,7 +92,6 @@ function injectCustomButtons() {
   if (pageheadActions && !document.getElementById('ruhub-btn-vs-code')) {
     
     // 1. Кнопка "Открыть в VS Code (github.dev)"
-    // Меняет домен с github.com на github.dev для открытия веб-редактора
     const vscodeLi = document.createElement('li');
     vscodeLi.id = 'ruhub-btn-vs-code';
     const vscodeUrl = window.location.href.replace('github.com', 'github.dev');
@@ -89,12 +108,10 @@ function injectCustomButtons() {
     pageheadActions.prepend(vscodeLi);
     
     // 2. Быстрая кнопка "Скачать ZIP"
-    // Извлекает имя пользователя и репозитория из URL
     const [, user, repo] = window.location.pathname.split('/');
     if (user && repo) {
       const zipLi = document.createElement('li');
       zipLi.id = 'ruhub-btn-zip';
-      // Ссылка на скачивание (default branch - обычно main или master, GitHub сам разрешает HEAD для zipball)
       const zipUrl = \`/\${user}/\${repo}/archive/HEAD.zip\`;
       
       zipLi.innerHTML = `
@@ -114,8 +131,8 @@ function injectCustomButtons() {
 // Запуск при загрузке страницы
 requestTranslation();
 
-// Наблюдение за изменениями DOM (GitHub работает как Single Page Application с помощью Turbo)
+// Наблюдение за изменениями DOM
 const observer = new MutationObserver(() => {
   requestTranslation();
 });
-observer.observe(document.body, { childList: true, subtree: true });
+observer.observe(document.body, { childList: true, subtree: true, characterData: true });

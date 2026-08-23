@@ -112,7 +112,7 @@ function injectCustomButtons() {
     if (user && repo) {
       const zipLi = document.createElement('li');
       zipLi.id = 'ruhub-btn-zip';
-      const zipUrl = \`/\${user}/\${repo}/archive/HEAD.zip\`;
+      const zipUrl = "/" + user + "/" + repo + "/archive/HEAD.zip";
       
       zipLi.innerHTML = `
         <a href="${zipUrl}" class="btn btn-sm ruhub-btn" title="Скачать архив репозитория (ZIP)">
